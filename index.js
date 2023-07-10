@@ -1,10 +1,10 @@
 let restrictedKeyCodes = [9, 16, 17, 18, 19, 20, 27, 33, 34, 37, 38, 39, 40, 45, 46, 91, 93, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123]
 let isBooted = false
+let isBooting = false
 let terminal = document.getElementById("area")
 
-//scripts
-let bootScript = ["Foundation 12.0 (Workstation Edition)/fff/0","Kernel 5.3-1102w2 on x86_64 (tty1)/fff/1000","<br>//100", "[BOOT]: Verifying credentials.../fff/2000","serverlogin: logix/3c3/400","password: ••••••••••/3c3/400","certificate: Tuesday Feb 23 16:52:21 on tty1/f33/400","signature: 984TJD=130A/3c3/400","server code: 200 (OK)/3c3/400","server certificate: trusted/3c3/400","server platform: Apache HTTP/3c3/400","<br>//600","[BOOT]: Fixing certificate.../fff/2000","[CERTIFICATE]: Generating.../fff/50","[CERTIFICATE]: Parsing.../fff/200","[CERTIFICATE]: Applying.../fff/300","[CERTIFICATE]: Finsihed!/fff/2000","[BOOT]: All components fine./fff/500","[BOOT]: Risk score: 13/ff0/300","[BOOT]: Launching.../fff/400","<br>//5000"]
 var messages = []
+var tempMessages = []
 var currentText = ""
 
 function constructP(msg, color) {
@@ -17,37 +17,50 @@ function updateText() {
     messages.forEach(msg => {
         terminal.innerHTML += msg
     });
-    terminal.scrollTop = terminal.scrollHeight
+    terminal.scrollTop = terminal.scrollHeight + 10
     terminal.innerHTML += constructP(currentText, "FFF")
 }
 
-function sendText(p) {
-    messages.push(p)
-    updateText()
+function scriptReader(p, delay, isTemp, overwriteTemp) {
+    delay = typeof delay == 'undefined' ? 0 : delay
+    return new Promise(resolve => {
+        setTimeout(() => {
+            sendText(p, isTemp, overwriteTemp)
+            resolve()
+        }, delay)
+    })
 }
 
-function scriptPlayer(script) {
-    var timer = 0
-    let promise = new Promise(finish => {
-    script.forEach(line => {
-        let msg = line.split("/")[0]
-        let color = line.split("/")[1]
-        let delay = line.split("/")[2]
-        timer = timer + Number(delay)
-        setTimeout(() => {
-            sendText(constructP(msg, color))
-        }, timer)
+function sendText(p, isTemp, overwriteTemp) {
+    if (!isTemp) {messages.push(p)} else {tempMessages.push(p)}
+    if (overwriteTemp && isTemp) {tempMessages = [p]} else {
+        if (overwriteTemp) tempMessages = []
+    }
+    updateText()
+    tempMessages.forEach(item => {
+        terminal.innerHTML += item
     });
-    finish()
-})
+}
 
-promise.then(
-    function() {return 'done'}
-)
+async function scriptPlayer(script) {
+    for (const line of script) {
+        let msg = line.split("/")[0]
+        let delay = line.split("/")[1]
+        let color = line.split("/")[2]
+        let options = line.split("/")[3].split("")
+        color = color == '' ? "FFF" : color
+        options[0] = typeof options[0] == 'undefined' ? 0 : options[0]
+        options[1] = typeof options[1] == 'undefined' ? 0 : options[1]
+        temp = options[0] == '0' ? false : true
+        overwrite = options[1] == '0' ? false : true
+        await scriptReader(constructP(msg, color), delay, temp, overwrite)
+    }
 }
 
 function input(e) {
-    if (isBooted) return boot()
+    if (isBooting) return
+    if (!isBooted) return boot()
+
     var isRestricted = false
     restrictedKeyCodes.forEach(code => {
         if (code == e.keyCode) isRestricted = true
@@ -67,3 +80,24 @@ function input(e) {
     }
     updateText()
 }
+
+async function boot() {
+    isBooting = true
+    await scriptPlayer(bootScript)
+    isBooted = true
+    isBooting = false
+}
+
+sendText(constructP('SCP FOUNDATION Workstation Alternate Access Link Network (WAALN)','ff0'), true)
+sendText(constructP('>>> TERMINAL OFFLINE. PRESS ANY KEY TO BOOT <<<', 'ff0'), true)
+
+//scripts
+/*
+constructP / delay / color / options (XX)
+
+options first value is isTemp, second is overwriteTemp
+default for options is 00.
+
+constructP(msg, color)
+*/
+let bootScript = ["--- BOOTING UP TERMINAL (WAALN)//ff0/01","Checking Interface./400//10","Checking Interface../400//11","Checking Interface.../400//11","Checking Interface.../200//01","Welcome, user!/600//","sudo -t='192.168.200.140' connect_terminal/300/ff0/","WAALN Interface Client v2.20///", "[]: Checking validity of certificate.../200//", "[]: Transferring privillages [█-----]/500//11", "[]: Transferring privillages [██----]/500//11","[]: Transferring privillages [███---]/500//11","[]: Transferring privillages [████--]/500//11","[]: Transferring privillages [█████-]/500//11","[]: Transferring privillages [██████]/500//01","[]: Complete///","--- checking stability of connection/600/ff0/", "--- connection established and verified/1200/ff0/","<br>///",">>> TERMINAL CONNECTED. RESUMING NORMAL BOOT... <<</300/ff0/", "<br>/1000//","Foundation Terminal (Workstation Edition) v2.20///","Facility status: BREACHED - Follow Class-EK evacuation proceedure immediately.//f00/","<br>///"]
