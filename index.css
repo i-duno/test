@@ -87,13 +87,6 @@
     margin: 1px;
 }
 
-.monitor span {
-    animation: textShadow 0.5s infinite;
-    font-family: monospace;
-    padding: 0;
-    margin: 1px;
-}
-
 .monitor {
     overflow: hidden;
     height: 100%;

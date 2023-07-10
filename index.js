@@ -3,25 +3,89 @@ let isBooted = false
 let isBooting = false
 let terminal = document.getElementById("area")
 
+var cosmeticDirLength = 0
+
 var messages = []
 var tempMessages = []
 var currentText = ""
+var environment = {
+    'System' : {
+        'ServerLogs' : {
 
-function constructP(msg, color) {
+        },
+        'Updates' : {
+
+        },
+        'SystemLogs' : {
+
+        }
+    },
+    'User' : {
+        'Files' : {
+
+        },
+        'Worksheets' : {
+
+        },
+        'Entries' : {
+
+        },
+        'Messages' : {
+            'Site-02' : {
+
+            },
+            'Director' : {
+
+            },
+            'Dr.Brian' : {
+
+            },
+            'Dr.Edna' : {
+
+            },
+            'Researcher.Dan' : {
+
+            },
+            'Security.Philip' : {
+
+            },
+            'Security.Erik' : {
+
+            },
+            'Security.Yu' : {
+
+            }
+        },
+        'LiveUpdates' : {
+
+        }
+    },
+    'InjectedFiles' : {
+        'Classified' : {
+
+        },
+        'StabilityLogs' : {
+
+        }
+    }
+}
+var working_directory = []
+
+function constructP(msg, color) {//constructs p elements
     color = color == undefined ? "FFF" : color
     return "<p style=\"color: #" + color + ";\">" + msg + "</p>"
 }
 
-function updateText() {
+function updateText() {//update text
     terminal.innerHTML = ""
     messages.forEach(msg => {
         terminal.innerHTML += msg
     });
-    terminal.scrollTop = terminal.scrollHeight + 10
+    terminal.scrollTop = terminal.scrollHeight
     terminal.innerHTML += constructP(currentText, "FFF")
 }
 
-function scriptReader(p, delay, isTemp, overwriteTemp) {
+function scriptReader(p, delay, isTemp, overwriteTemp) {//dependency of scriptPlayer
     delay = typeof delay == 'undefined' ? 0 : delay
     return new Promise(resolve => {
         setTimeout(() => {
@@ -31,7 +95,7 @@ function scriptReader(p, delay, isTemp, overwriteTemp) {
     })
 }
 
-function sendText(p, isTemp, overwriteTemp) {
+function sendText(p, isTemp, overwriteTemp) {//sends and updates text
     if (!isTemp) {messages.push(p)} else {tempMessages.push(p)}
     if (overwriteTemp && isTemp) {tempMessages = [p]} else {
         if (overwriteTemp) tempMessages = []
@@ -42,7 +106,7 @@ function sendText(p, isTemp, overwriteTemp) {
     });
 }
 
-async function scriptPlayer(script) {
+async function scriptPlayer(script) { //uses script reader to play script
     for (const line of script) {
         let msg = line.split("/")[0]
         let delay = line.split("/")[1]
@@ -57,7 +121,64 @@ async function scriptPlayer(script) {
     }
 }
 
-function input(e) {
+function getLocation() {
+    var env = environment
+    working_directory.forEach(el => {
+        env = env[el]
+    });
+    return env
+}
+
+function getCosmeticDir() {
+    var dir = "C://"
+    working_directory.forEach(el => {
+        dir += el + "/"
+    });
+    dir += "> "
+    cosmeticDirLength = dir.length
+    return dir
+}
+
+function runCommand(cmd) {
+let operator = cmd.split(" ")[1]
+let params = cmd.split(" ")
+switch(operator) {
+    case "cd" :
+        let found = false
+        if (params[2] == "..") {
+            working_directory.pop()
+            return
+        }
+        Object.keys(getLocation()).forEach(el => {
+            if (el == params[2]) {
+                if (typeof getLocation()[el] !== 'object') return
+                working_directory.push(el)
+                found = true
+            }
+        });
+        if (!found) sendText(constructP('Cannot find specified path.'))
+    break;
+    case "ls" :
+        let keys = Object.keys(getLocation())
+        let horizontalOverflow = 4
+        let horiz = 0
+        var result = ""
+        keys.forEach((el, i) => {
+            result += el
+            horiz++
+            if (horiz == horizontalOverflow) {
+                result += "<br>"
+                return
+            }
+            if (keys.length - 1 > i) result += ", "
+        });
+        sendText(constructP(result))
+    break;
+}
+}
+
+
+function input(e) { //handles input -calls runCommand when enter is pressed
     if (isBooting) return
     if (!isBooted) return boot()
 
@@ -68,11 +189,13 @@ function input(e) {
     if (isRestricted) return
     switch(e.keyCode) {
         case 8:
+            if (currentText.length <= cosmeticDirLength) return
             currentText = currentText.slice(0, -1)
         break;
         case 13:
             messages.push(constructP(currentText))
-            currentText = ""
+            runCommand(currentText)
+            currentText = getCosmeticDir()
         break;
         default:
             currentText += e.key
@@ -81,11 +204,12 @@ function input(e) {
     updateText()
 }
 
-async function boot() {
+async function boot() { //enables isBooted
     isBooting = true
     await scriptPlayer(bootScript)
     isBooted = true
     isBooting = false
+    input({'keyCode' : 13, 'key': ''})
 }
 
 sendText(constructP('SCP FOUNDATION Workstation Alternate Access Link Network (WAALN)','ff0'), true)
@@ -100,4 +224,4 @@ default for options is 00.
 
 constructP(msg, color)
 */
-let bootScript = ["--- BOOTING UP TERMINAL (WAALN)//ff0/01","Checking Interface./400//10","Checking Interface../400//11","Checking Interface.../400//11","Checking Interface.../200//01","Welcome, user!/600//","sudo -t='192.168.200.140' connect_terminal/300/ff0/","WAALN Interface Client v2.20///", "[]: Checking validity of certificate.../200//", "[]: Transferring privillages [█-----]/500//11", "[]: Transferring privillages [██----]/500//11","[]: Transferring privillages [███---]/500//11","[]: Transferring privillages [████--]/500//11","[]: Transferring privillages [█████-]/500//11","[]: Transferring privillages [██████]/500//01","[]: Complete///","--- checking stability of connection/600/ff0/", "--- connection established and verified/1200/ff0/","<br>///",">>> TERMINAL CONNECTED. RESUMING NORMAL BOOT... <<</300/ff0/", "<br>/1000//","Foundation Terminal (Workstation Edition) v2.20///","Facility status: BREACHED - Follow Class-EK evacuation proceedure immediately.//f00/","<br>///"]
+let bootScript = ["--- BOOTING UP TERMINAL (WAALN)//ff0/01","Checking Interface./400//10","Checking Interface../400//11","Checking Interface.../400//11","Checking Interface.../200//01","Welcome, user!/600//","sudo -t='192.168.200.140' connect_terminal/300/ff0/","WAALN Interface Client v2.20///", "[]: Checking validity of certificate.../200//", "[]: Transferring privillages [█-----]/500//11", "[]: Transferring privillages [██----]/500//11","[]: Transferring privillages [███---]/500//11","[]: Transferring privillages [████--]/500//11","[]: Transferring privillages [█████-]/500//11","[]: Transferring privillages [██████]/500//01","[]: Complete///","--- checking stability of connection/600/ff0/", "--- connection established and verified/1200/ff0/","<br>///",">>> TERMINAL CONNECTED. RESUMING NORMAL BOOT... <<</300/ff0/", "<br>/1000//","Foundation Terminal (Workstation Edition) v2.20///","Facility status: BREACHED - Follow Class-EK evacuation proceedure immediately.//fa0/","<br>///"]
