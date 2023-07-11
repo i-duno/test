@@ -174,6 +174,23 @@ switch(operator) {
         });
         sendText(constructP(result))
     break;
+    case "open" :
+        var foundFile = false
+        Object.keys(getLocation()).forEach(el => {
+            if (el == params[2]) {
+                if (typeof getLocation()[el] == 'object') return
+                //read or run
+                foundFile = true
+            }
+        });
+        if (!foundFile) sendText(constructP('Cannot find specified file.'))
+    break;
+    case "help" :
+        
+    break;
+    case "time" :
+        returnTime()
+    break;
 }
 }
 
@@ -212,8 +229,35 @@ async function boot() { //enables isBooted
     input({'keyCode' : 13, 'key': ''})
 }
 
+//time loop crash
+let deviation = Math.round(Math.random()*60)
+var timeleft = 180
+var mins = 3
+var seconds = 0
+
+timeleft = timeleft - deviation
+
+function updateTime() {
+    seconds = timeleft
+    mins = Math.round(seconds / 60)
+    seconds = seconds % 60
+    timeleft--
+}
+
+function crash() {
+    updateTime()
+    if (timeleft <= 0) {
+        console.log('crash')
+        timeleft = 180
+    }
+}
+
+//use setinterval cause its easier and makes for unpredictability.
+setInterval(() => {crash()}, 1000)
+
 sendText(constructP('SCP FOUNDATION Workstation Alternate Access Link Network (WAALN)','ff0'), true)
-sendText(constructP('>>> TERMINAL OFFLINE. PRESS ANY KEY TO BOOT <<<', 'ff0'), true)
+sendText(constructP('>>> TERMINAL DISCONNECTED. PRESS ANY KEY TO BOOT <<<', 'ff0'), true)
+
 
 //scripts
 /*
@@ -224,4 +268,10 @@ default for options is 00.
 
 constructP(msg, color)
 */
-let bootScript = ["--- BOOTING UP TERMINAL (WAALN)//ff0/01","Checking Interface./400//10","Checking Interface../400//11","Checking Interface.../400//11","Checking Interface.../200//01","Welcome, user!/600//","sudo -t='192.168.200.140' connect_terminal/300/ff0/","WAALN Interface Client v2.20///", "[]: Checking validity of certificate.../200//", "[]: Transferring privillages [█-----]/500//11", "[]: Transferring privillages [██----]/500//11","[]: Transferring privillages [███---]/500//11","[]: Transferring privillages [████--]/500//11","[]: Transferring privillages [█████-]/500//11","[]: Transferring privillages [██████]/500//01","[]: Complete///","--- checking stability of connection/600/ff0/", "--- connection established and verified/1200/ff0/","<br>///",">>> TERMINAL CONNECTED. RESUMING NORMAL BOOT... <<</300/ff0/", "<br>/1000//","Foundation Terminal (Workstation Edition) v2.20///","Facility status: BREACHED - Follow Class-EK evacuation proceedure immediately.//fa0/","<br>///"]
+function returnTime() {
+sendText(constructP('[PROTOCOL]: Estimated time until reality playback: ' + mins + ":" + seconds + ".","ff0"))
+}
+
+var bootScript = ["[PROTOCOL]: Setting up WAALN connection...//ff0/01","[PROTOCOL]: Attempting to secure connection./3000/ff0/","[PROTOCOL]: Secure connection failed, injecting TROJAN. [-----]/1000/ff0/10","[PROTOCOL]: Secure connection failed, injecting TROJAN. [█----]/1000/ff0/11","[PROTOCOL]: Secure connection failed, injecting TROJAN. [██---]/1000/ff0/11","[PROTOCOL]: Secure connection failed, injecting TROJAN. [███--]/1000/ff0/11","[PROTOCOL]: Secure connection failed, injecting TROJAN. [████-]/1000/ff0/11","[PROTOCOL]: Secure connection failed, injecting TROJAN. [█████]/1000/ff0/01", "[PROTOCOL]: Deploying payload./500/ff0/","[PROTOCOL]: Privillages transferred successfully./3000/ff0/","Welcome, user!///","Foundation Workstation v2.20 (FWprofessional)///","<br>///","Service wide notice: FACILITY IS BREACHED.//f50/","An immediate XK-Class scenario threat has been detected by our systems. //f50/","MTF Forces within 7 klicks will arrive shortly.//f50/","Their mission is to contain the threat, do not expect help from them.//f50/","<br>///","You have 6 new messages!///","///"]
+
+
